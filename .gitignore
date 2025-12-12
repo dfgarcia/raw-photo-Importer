@@ -1,0 +1,8 @@
+__pycache__/
+build/
+dist/
+*.spec
+mock_test/
+config.json
+.DS_Store
+.venv/
