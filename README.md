@@ -1,6 +1,6 @@
 # PhotoImporter
 
-**Shitty RAW Photo Importer** is a simple Python application designed to organize your photography workflow. It copies RAW image files from a source directory (like an SD card) to a destination folder, automatically sorting them into a `YYYY/MM/DD` directory structure based on the photo's capture date.
+**Shitty RAW Photo Importer** is a simple Python application created to **solve my specific need** to organize my photography workflow. It copies RAW image files from a source directory (like an SD card) to a destination folder, automatically sorting them into a `YYYY/MM/DD` directory structure based on the photo's capture date.
 
 ## Features
 - **RAW Support**: Handles common RAW formats including `.CR2`, `.NEF`, `.ARW`, `.DNG`, etc.
