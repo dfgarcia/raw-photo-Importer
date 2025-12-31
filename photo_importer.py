@@ -10,6 +10,10 @@ from PIL import Image, ImageTk
 
 import sys
 
+import hashlib
+
+VERSION = "1.1.0"
+
 class PhotoImporterApp:
     def resource_path(self, relative_path):
         """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -140,7 +144,7 @@ class PhotoImporterApp:
             self.dest_entry.insert(0, folder)
 
     def show_about(self):
-        messagebox.showinfo("About", "RAW Photo Importer\nVersion 1.0\nCreated by Daniel Garcia")
+        messagebox.showinfo("About", f"RAW Photo Importer\nVersion {VERSION}\nCreated by Daniel Garcia")
 
     def log(self, message):
         self.log_text.insert(tk.END, message + "\n")
@@ -176,6 +180,17 @@ class PhotoImporterApp:
         # Fallback to modification time
         timestamp = os.path.getmtime(filepath)
         return datetime.datetime.fromtimestamp(timestamp)
+
+    def calculate_hash(self, filepath):
+        """Calculates the MD5 hash of a file."""
+        hash_md5 = hashlib.md5()
+        try:
+            with open(filepath, "rb") as f:
+                for chunk in iter(lambda: f.read(4096), b""):
+                    hash_md5.update(chunk)
+            return hash_md5.hexdigest()
+        except Exception:
+            return None
 
     def import_photos(self, source, dest):
         self.log(f"Starting import from {source} to {dest}...")
@@ -231,11 +246,34 @@ class PhotoImporterApp:
                                 self.log(f"Conflict found. Renaming to {new_name}")
 
                         shutil.copy2(filepath, target_path)
-                        self.log(f"Copied: {file} -> {year}/{month}/{day}")
+                        
+                        # VERIFICATION START
+                        if not os.path.exists(target_path):
+                            raise Exception("Destination file does not exist after copy")
+                        
+                        if os.path.getsize(target_path) != os.path.getsize(filepath):
+                            try:
+                                os.remove(target_path)
+                            except:
+                                pass
+                            raise Exception("File size mismatch after copy")
+                            
+                        src_hash = self.calculate_hash(filepath)
+                        dest_hash = self.calculate_hash(target_path)
+                        
+                        if src_hash != dest_hash:
+                            try:
+                                os.remove(target_path)
+                            except:
+                                pass
+                            raise Exception("File hash mismatch after copy")
+                        # VERIFICATION END
+
+                        self.log(f"Copied and Verified: {file} -> {target_path}")
                         copied += 1
                         
-                        # Update UI periodically (safely omitted detailed queue for simplicity in this script, direct update works in simple tkinter apps usually but not unrelated threads strictly speaking. For strict safety update_idletasks or queue is better, but this usually flies for simple tools).
-                        # To be safe, we won't touch GUI elements directly in loop deeply, but text append is usually tolerant enough in simple scripts or we accept the risk. 
+                        # Update UI periodically (safely omitted detailed queue for simplicity in this script...)
+                        # To be safe, we won't touch GUI elements directly in loop deeply...
                         # Ideally use root.after for updates.
                         
                     except Exception as e:
